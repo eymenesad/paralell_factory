@@ -87,6 +87,7 @@ file_path = 'input.txt'
 read_input_file(file_path)
 
 print(num_machines)
+print("input file" + file_path)
 print(num_cycles)
 print(wear_factors)
 print(maintenance_threshold)
