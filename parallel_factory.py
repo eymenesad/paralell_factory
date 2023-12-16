@@ -85,8 +85,9 @@ def read_input_file(file_path):
 # Example usage:
 file_path = 'input.txt'
 read_input_file(file_path)
-
+print("num_machines: ", num_machines)
 print(num_machines)
+print("num_cycles: ", num_cycles)
 print(num_cycles)
 print(wear_factors)
 print(maintenance_threshold)
