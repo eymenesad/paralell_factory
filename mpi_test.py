@@ -106,36 +106,6 @@ def read_input_file(file_path):
 #def add(machine, other_machine):
 #    return machine + other_machine
 
-def enhance(product):
-    
-    return product[0] + product + product[-1]
-
-def reverse(product):
-    return product[::-1]
-
-def chop(product):
-    if len(product) > 1:
-        return product[:-1]
-    else:
-        return product
-
-def trim(product):
-    if len(product) > 2:
-        return product[1:-1]
-    else:
-        return product
-
-def split(product):
-    length = len(product)
-    if length > 1:
-        if length % 2 == 0:
-            middle = length // 2
-        else:
-            middle = length // 2 + 1
-        return product[:middle]
-    else:
-        return product
-
 
     
 # Example usage:
