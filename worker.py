@@ -45,6 +45,11 @@ def split(product):
 
 # get the number of cycles from the main room
 num_cycles = worker_comm.recv(source = 0, tag = 7)
+maintenance_threshold = worker_comm.recv(source = 0, tag = 6)
+wear_factors = worker_comm.recv(source = 0, tag = 9)
+
+wear = 0
+
 
 for y in range(num_cycles):
 
@@ -53,7 +58,7 @@ for y in range(num_cycles):
         #all the other nodes take the node from the master node
         #for j in range(num_machines-1,0,-1):
         #if spawned_rank == j:
-        #print("worker rank: ", spawned_rank)
+        
         input_data = worker_comm.recv(source = 0, tag = 1)
         id = worker_comm.recv(source = 0, tag = 5)
 
@@ -73,8 +78,27 @@ for y in range(num_cycles):
         elif id == 5:
             result_data = split(input_data)
 
+        # Calculate wear based on the operation
+        wear += wear_factors[id-1]  # Adjust index for wear_factors list
+
+        # Check for maintenance need
+        if wear >= maintenance_threshold:
+            #print(f"Worker {spawned_rank+1} is sending {wear} message to the main control room")
+            maintenance_cost = (wear - maintenance_threshold + 1) * wear_factors[id-1]
+            maintenance_message = f"{spawned_rank+1}-{maintenance_cost}-{y+1}"
+            # Send maintenance message to the main control room (non-blocking)
+            requ = worker_comm.isend(maintenance_message, dest=0, tag=8)
+            # print debugging to see isend has worked   
+           
+            requ.wait()  # Ensure the message is sent
+            wear = 0  # Reset wear after maintenance
+        
         #print("worker rank: ", spawned_rank, "calculated result data: ", result_data)
         worker_comm.send(result_data, dest = 0, tag = 2)
+
+        
+
+        
 
 
 

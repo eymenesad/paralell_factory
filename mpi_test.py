@@ -105,11 +105,9 @@ def read_input_file(file_path):
     return 
 #def add(machine, other_machine):
 #    return machine + other_machine
-
-
     
 # Example usage:
-file_path = 'input.txt'
+file_path = 'test_input.txt'
 
 #rank ==0
 num_machines = 0
@@ -134,12 +132,15 @@ new_comm = MPI.COMM_SELF.Spawn(
     args=["worker.py"],
     maxprocs=num_machines
 )
-
 # send number of cycles to all the workers
 for i in range(num_machines):
     new_comm.send(num_cycles, dest=i, tag=7)
+    new_comm.send(maintenance_threshold, dest=i, tag=6)
+    new_comm.send(wear_factors, dest=i, tag=9)
 
 
+
+maintenance_logs = []
 for t in range(num_cycles):
 
     final_result = ""
@@ -161,17 +162,25 @@ for t in range(num_cycles):
             final_result = going_data
             break
 
+        
+
         new_comm.send(going_data, dest = j, tag = 1)
         new_comm.send(nodes[j].current_operation_id, dest = j, tag = 5)
         nodes[j].change_operation()
-
+        
+        status = MPI.Status()
+        
+        if new_comm.iprobe(source=j, tag=8):
+            req = new_comm.irecv(source=j, tag=8)
+            data = req.wait()
+            maintenance_logs.append(data)
+    
+    
     #receive the final result
 
-    print("final result: ", final_result)
-    # Receive the result from the spawned process
-    #result = comm.recv(source=0)
+    print(final_result)
 
-    # Disconnect from the spawned process
-    #comm.Disconnect()
 
-    
+print("Maintenance Logs:")
+for message in maintenance_logs:
+    print(message)
