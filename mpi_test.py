@@ -1,6 +1,9 @@
+# Fatih Demir 2020400093
+# Eymen Esad Çeliktürk 2020400165
+# Group id : 18
 # activate mpi
-# mpiexec -n 4 python main.py
-import subprocess
+
+import sys
 from mpi4py import MPI
 import numpy as np
 
@@ -12,7 +15,7 @@ size = comm.Get_size()
 rank = comm.Get_rank()
 
 
-
+# machine class to keep track of the attributes of each machine
 class MachineNode:
     def __init__(self, machine_id, parent=None, current_operation_id=None):
         self.machine_id = machine_id
@@ -42,11 +45,11 @@ class MachineNode:
                 self.current_operation_id = 5
 
 
-def read_input_file(file_path):
+def read_input_file(input_filename):
     global num_machines, num_cycles, wear_factors, maintenance_threshold, lines_list, nodes, node_dict, rootm, leaf_node_ids
 
 
-    with open(file_path, 'r') as file:
+    with open(input_filename, 'r') as file:
         # Read the number of machines
         num_machines = int(file.readline().strip())
 
@@ -107,7 +110,8 @@ def read_input_file(file_path):
 #    return machine + other_machine
     
 # Example usage:
-file_path = 'test_input.txt'
+input_filename = sys.argv[1]
+output_filename = sys.argv[2]
 
 #rank ==0
 num_machines = 0
@@ -122,7 +126,7 @@ leaf_node_ids = [] # list of leaf node IDs
 operation_map = {"add": 0, "enhance": 1, "reverse": 2, "chop": 3, "trim": 4, "split": 5}
 
 #print("I am the master node")
-read_input_file(file_path)
+read_input_file(input_filename)
 #spawn workers with number of num
 
 new_comm = MPI.COMM_NULL
@@ -138,49 +142,51 @@ for i in range(num_machines):
     new_comm.send(maintenance_threshold, dest=i, tag=6)
     new_comm.send(wear_factors, dest=i, tag=9)
 
-
-
 maintenance_logs = []
-for t in range(num_cycles):
 
-    final_result = ""
 
-    for j in range(num_machines-1,-1,-1):
-        #print("j: ", j, "children:", nodes[j].children)
+with open(output_filename, 'w') as output_file:
 
-        going_data = ""
-        if nodes[j].first_input != None:
-            going_data = nodes[j].first_input
+    for t in range(num_cycles):
+
+        final_result = ""
+
+        for j in range(num_machines-1,-1,-1):
+            #print("j: ", j, "children:", nodes[j].children)
+
+            going_data = ""
+            if nodes[j].first_input != None:
+                going_data = nodes[j].first_input
+            
+            else:
+                #first sort the children list
+                #receive data from children
+                nodes[j].children.sort(key = lambda x: x.machine_id)
+                for ii in range(len(nodes[j].children)):
+                    going_data += new_comm.recv(source = nodes[j].children[ii].machine_id-1, tag = 2)
+            
+            if j == 0:
+                final_result = going_data
+                break
+
+            #send data to parent to process the data coming from children
+
+            new_comm.send(going_data, dest = j, tag = 1)
+            new_comm.send(nodes[j].current_operation_id, dest = j, tag = 5)
+            nodes[j].change_operation()
+            
+            
+            # check if the machine needs maintenance and used non-blocking communication
+            if new_comm.iprobe(source=j, tag=8):
+                req = new_comm.irecv(source=j, tag=8)
+                data = req.wait()
+                maintenance_logs.append(data)
         
-        else:
-            #first sort the children list
-            nodes[j].children.sort(key = lambda x: x.machine_id)
-            for ii in range(len(nodes[j].children)):
-                going_data += new_comm.recv(source = nodes[j].children[ii].machine_id-1, tag = 2)
         
-        if j == 0:
-            final_result = going_data
-            break
-
-        
-
-        new_comm.send(going_data, dest = j, tag = 1)
-        new_comm.send(nodes[j].current_operation_id, dest = j, tag = 5)
-        nodes[j].change_operation()
-        
-        status = MPI.Status()
-        
-        if new_comm.iprobe(source=j, tag=8):
-            req = new_comm.irecv(source=j, tag=8)
-            data = req.wait()
-            maintenance_logs.append(data)
-    
-    
-    #receive the final result
-
-    print(final_result)
+        #write the final result to the output file
+        output_file.write(final_result + "\n")
 
 
-print("Maintenance Logs:")
-for message in maintenance_logs:
-    print(message)
+    #Maintenance Logs
+    for message in maintenance_logs:
+        output_file.write(message + "\n")

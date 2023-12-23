@@ -1,6 +1,7 @@
+# Fatih Demir 2020400093
+# Eymen Esad Çeliktürk 2020400165
+# Group id : 18
 # activate mpi
-# mpiexec -n 4 python main.py
-import subprocess
 from mpi4py import MPI
 import numpy as np
 
@@ -12,7 +13,7 @@ size = worker_comm.Get_size()
 spawned_rank = worker_comm.Get_rank()
 
 
-
+# string operations
 def enhance(product):
     
     return product[0] + product + product[-1]
@@ -43,7 +44,7 @@ def split(product):
     else:
         return product
 
-# get the number of cycles from the main room
+# get the number of cycles, maintenance threshold and wear factors from the main control room
 num_cycles = worker_comm.recv(source = 0, tag = 7)
 maintenance_threshold = worker_comm.recv(source = 0, tag = 6)
 wear_factors = worker_comm.recv(source = 0, tag = 9)
@@ -56,14 +57,11 @@ for y in range(num_cycles):
     if spawned_rank != 0:
 
         #all the other nodes take the node from the master node
-        #for j in range(num_machines-1,0,-1):
-        #if spawned_rank == j:
+        
         
         input_data = worker_comm.recv(source = 0, tag = 1)
         id = worker_comm.recv(source = 0, tag = 5)
 
-        #print("worker rank: ", spawned_rank, "input data: ", input_data, "id: ", id)
-        #for m in range(num_cycles):
         result_data = ""
 
 
@@ -97,13 +95,3 @@ for y in range(num_cycles):
         worker_comm.send(result_data, dest = 0, tag = 2)
 
         
-
-        
-
-
-
-        
-
-
-
-            
