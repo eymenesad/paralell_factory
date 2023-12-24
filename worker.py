@@ -8,10 +8,8 @@ import numpy as np
 #Initilazing MPI environment
 worker_comm = MPI.Comm.Get_parent()
 
-
 size = worker_comm.Get_size()
 spawned_rank = worker_comm.Get_rank()
-
 
 # string operations
 def enhance(product):
@@ -50,7 +48,6 @@ maintenance_threshold = worker_comm.recv(source = 0, tag = 6)
 wear_factors = worker_comm.recv(source = 0, tag = 9)
 
 wear = 0
-
 
 for y in range(num_cycles):
 
